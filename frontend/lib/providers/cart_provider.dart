@@ -8,16 +8,44 @@ class CartProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
   final List<CartItem> _items = [];
   bool _isLoading = false;
+  Map<String, dynamic>? _selectedVoucher;
 
   List<CartItem> get items => _items;
   bool get isLoading => _isLoading;
+  Map<String, dynamic>? get selectedVoucher => _selectedVoucher;
 
   int get totalItems {
     return _items.fold(0, (sum, item) => sum + item.quantity);
   }
 
-  double get totalPrice {
+  double get subtotalPrice {
     return _items.fold(0, (sum, item) => sum + item.subtotal);
+  }
+
+  double get discountAmount {
+    if (_selectedVoucher == null) return 0.0;
+    
+    final voucher = _selectedVoucher!['voucher'];
+    final type = voucher['type'];
+    final value = double.parse(voucher['value'].toString());
+    
+    double discount = 0.0;
+    if (type == 'percent') {
+      discount = subtotalPrice * (value / 100);
+    } else {
+      discount = value;
+    }
+    
+    return discount > subtotalPrice ? subtotalPrice : discount;
+  }
+
+  double get totalPrice {
+    return subtotalPrice - discountAmount;
+  }
+
+  void applyVoucher(Map<String, dynamic>? voucher) {
+    _selectedVoucher = voucher;
+    notifyListeners();
   }
 
   void addToCart(Menu menu) {
@@ -49,6 +77,7 @@ class CartProvider with ChangeNotifier {
 
   void clearCart() {
     _items.clear();
+    _selectedVoucher = null;
     notifyListeners();
   }
 
@@ -61,6 +90,13 @@ class CartProvider with ChangeNotifier {
   }) async {
     if (_items.isEmpty) return {'success': false, 'message': 'Cart is empty'};
 
+    if (_selectedVoucher != null) {
+      final minPurchase = double.parse(_selectedVoucher!['voucher']['min_purchase'].toString());
+      if (subtotalPrice < minPurchase) {
+        return {'success': false, 'message': 'Minimum pembelian untuk voucher ini adalah Rp ${minPurchase.toInt()}'};
+      }
+    }
+
     _isLoading = true;
     notifyListeners();
 
@@ -72,6 +108,7 @@ class CartProvider with ChangeNotifier {
         'payment_method': paymentMethod,
         'idempotency_key': idempotencyKey,
         'notes': notes,
+        'voucher_id': _selectedVoucher?['voucher_id'],
         'items': _items.map((item) => {
           'menu_id': item.menu.id,
           'quantity': item.quantity,

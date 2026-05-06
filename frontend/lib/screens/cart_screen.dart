@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/voucher_provider.dart' as import_voucher;
 import 'success_screen.dart';
 
 class CartScreen extends StatefulWidget {
@@ -181,19 +182,77 @@ class _CartScreenState extends State<CartScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
+                      
+                      // Voucher Dropdown for Authenticated users
+                      if (auth.isAuthenticated) ...[
+                        Consumer<import_voucher.VoucherProvider>(
+                          builder: (context, voucherProv, child) {
+                            final claimedVouchers = voucherProv.myVouchers
+                                .where((v) => v['status'] == 'claimed')
+                                .toList();
+                                
+                            if (claimedVouchers.isEmpty) return const SizedBox.shrink();
+
+                            return DropdownButtonFormField<Map<String, dynamic>>(
+                              value: cart.selectedVoucher,
+                              decoration: const InputDecoration(
+                                labelText: 'Gunakan Voucher (Opsional)', 
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.local_offer, color: Colors.orange),
+                              ),
+                              items: [
+                                const DropdownMenuItem<Map<String, dynamic>>(
+                                  value: null,
+                                  child: Text('Tidak pakai voucher'),
+                                ),
+                                ...claimedVouchers.map((v) {
+                                  final voucher = v['voucher'];
+                                  final name = voucher['name'];
+                                  final minPurchase = voucher['min_purchase'];
+                                  return DropdownMenuItem<Map<String, dynamic>>(
+                                    value: v,
+                                    child: Text('$name (Min. Rp ${double.parse(minPurchase.toString()).toInt()})'),
+                                  );
+                                }),
+                              ],
+                              isExpanded: true,
+                              onChanged: (val) {
+                                cart.applyVoucher(val);
+                              },
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Total Pembayaran', style: TextStyle(fontSize: 16)),
+                          const Text('Subtotal', style: TextStyle(fontSize: 14)),
+                          Text('Rp ${cart.subtotalPrice.toInt()}', style: const TextStyle(fontSize: 14)),
+                        ],
+                      ),
+                      if (cart.discountAmount > 0) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Diskon Voucher', style: TextStyle(fontSize: 14, color: Colors.green)),
+                            Text('- Rp ${cart.discountAmount.toInt()}', style: const TextStyle(fontSize: 14, color: Colors.green, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ],
+                      const Divider(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Total Pembayaran', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           Text(
                             'Rp ${cart.totalPrice.toInt()}',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colorScheme.primary),
+                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: colorScheme.primary),
                           ),
                         ],
                       ),
-                      if (auth.isAuthenticated) ...[
-                        const Text('*Member mendapatkan Diskon khusus otomatis', style: TextStyle(fontSize: 12, color: Colors.green)),
-                      ],
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: cart.isLoading ? null : _handleCheckout,

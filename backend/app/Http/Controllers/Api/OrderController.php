@@ -82,7 +82,7 @@ class OrderController extends Controller
                     ];
                 }
 
-                // 3. Member Benefits (Discount)
+                // 3. Member Benefits & Voucher Validation
                 $discount_amount = 0;
                 $user_id = null;
 
@@ -90,8 +90,42 @@ class OrderController extends Controller
                 $user = auth('sanctum')->user();
                 if ($user) {
                     $user_id = $user->id;
-                    // Example benefit: 10% discount for members
-                    $discount_amount = $total_amount * 0.10; 
+                    
+                    // If voucher is provided
+                    if ($request->voucher_id) {
+                        $userVoucher = \App\Models\UserVoucher::where('user_id', $user_id)
+                            ->where('voucher_id', $request->voucher_id)
+                            ->where('status', 'claimed')
+                            ->with('voucher')
+                            ->lockForUpdate()
+                            ->first();
+
+                        if (!$userVoucher) {
+                            throw new \Exception("Voucher tidak valid atau sudah digunakan.");
+                        }
+
+                        $voucher = $userVoucher->voucher;
+
+                        // Check min purchase
+                        if ($voucher->min_purchase > 0 && $total_amount < $voucher->min_purchase) {
+                            throw new \Exception("Minimum pembelian untuk voucher ini adalah Rp {$voucher->min_purchase}");
+                        }
+
+                        // Calculate discount
+                        if ($voucher->type === 'percent') {
+                            $discount_amount = $total_amount * ($voucher->value / 100);
+                        } else {
+                            $discount_amount = $voucher->value;
+                        }
+
+                        // Cap discount amount to total amount
+                        if ($discount_amount > $total_amount) {
+                            $discount_amount = $total_amount;
+                        }
+
+                        // Mark voucher as used
+                        $userVoucher->update(['status' => 'used']);
+                    }
                 }
 
                 $final_amount = $total_amount - $discount_amount;
@@ -109,6 +143,7 @@ class OrderController extends Controller
                     'total_amount' => $final_amount,
                     'discount_amount' => $discount_amount,
                     'notes' => $request->notes,
+                    'voucher_id' => $request->voucher_id,
                 ]);
 
                 // Create Order Items

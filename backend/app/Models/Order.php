@@ -17,7 +17,8 @@ class Order extends Model
         'status', 
         'total_amount', 
         'discount_amount',
-        'notes'
+        'notes',
+        'voucher_id',
     ];
 
     protected $casts = [
