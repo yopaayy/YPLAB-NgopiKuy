@@ -128,5 +128,28 @@ class DatabaseSeeder extends Seeder
         foreach ($menus as $menu) {
             Menu::create($menu);
         }
+
+        // 5. Create Vouchers
+        \App\Models\Voucher::create([
+            'name' => 'Diskon Ngopi Asik 20%',
+            'code' => 'NGOPIASIK',
+            'type' => 'percent',
+            'value' => 20,
+            'start_date' => now(),
+            'expired_date' => now()->addDays(30),
+            'min_purchase' => 50000,
+            'quota' => 100,
+        ]);
+
+        \App\Models\Voucher::create([
+            'name' => 'Potongan 15 Ribu',
+            'code' => 'HEMAT15K',
+            'type' => 'nominal',
+            'value' => 15000,
+            'start_date' => now(),
+            'expired_date' => now()->addDays(7),
+            'min_purchase' => 100000,
+            'quota' => 50,
+        ]);
     }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/voucher_provider.dart' as import_voucher;
 import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -30,6 +31,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _addressController.text = auth.user!['address'] ?? '';
       _avatarController.text = auth.user!['avatar'] ?? '';
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<import_voucher.VoucherProvider>(context, listen: false).fetchMyVouchers();
+    });
   }
 
   void _saveProfile() async {
@@ -166,7 +171,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       child: const Text('Simpan Perubahan'),
                     ),
-                  )
+                  ),
+
+                  const SizedBox(height: 32),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('Voucher Saya 🎫', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  Consumer<import_voucher.VoucherProvider>(
+                    builder: (context, voucherProv, child) {
+                      if (voucherProv.isLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (voucherProv.myVouchers.isEmpty) {
+                        return const Text('Anda belum memiliki voucher.');
+                      }
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: voucherProv.myVouchers.length,
+                        itemBuilder: (context, index) {
+                          final item = voucherProv.myVouchers[index];
+                          final status = item['status'];
+                          final vName = item['voucher']['name'];
+                          final vType = item['voucher']['type'];
+                          final vVal = item['voucher']['value'];
+                          
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            color: status == 'claimed' ? colorScheme.secondary.withOpacity(0.2) : Colors.grey[200],
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.local_offer, 
+                                color: status == 'claimed' ? colorScheme.primary : Colors.grey
+                              ),
+                              title: Text(vName, style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                decoration: status != 'claimed' ? TextDecoration.lineThrough : null,
+                              )),
+                              subtitle: Text('Status: ${status.toString().toUpperCase()}'),
+                              trailing: Text(
+                                vType == 'percent' ? '${vVal.toInt()}%' : 'Rp ${vVal.toInt()}',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ],
               ),
             ),

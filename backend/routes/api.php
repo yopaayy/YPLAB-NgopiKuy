@@ -7,14 +7,17 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\OrderController;
 
+use App\Http\Controllers\Api\VoucherController;
+
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-// Public routes for Categories and Menus
+// Public routes for Categories, Menus, Vouchers
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{category}', [CategoryController::class, 'show']);
 Route::get('/menus', [MenuController::class, 'index']);
 Route::get('/menus/{menu}', [MenuController::class, 'show']);
+Route::get('/vouchers', [VoucherController::class, 'index']);
 
 // Public Checkout with Rate Limiting (e.g. 5 requests per minute)
 Route::middleware('throttle:5,1')->post('/orders', [OrderController::class, 'store']);
@@ -38,4 +41,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/menus/{menu}', [MenuController::class, 'destroy']);
     
     Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus']);
+
+    // Vouchers (Admin)
+    Route::post('/vouchers', [VoucherController::class, 'store']);
+    Route::put('/vouchers/{voucher}', [VoucherController::class, 'update']);
+    Route::delete('/vouchers/{voucher}', [VoucherController::class, 'destroy']);
+    
+    // Vouchers (Member)
+    Route::post('/vouchers/{voucher}/claim', [VoucherController::class, 'claim']);
+    Route::get('/my-vouchers', [VoucherController::class, 'myVouchers']);
 });

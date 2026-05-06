@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/auth_provider.dart';
 import '../providers/menu_provider.dart';
 import '../providers/cart_provider.dart';
+import '../providers/voucher_provider.dart';
 import '../models/menu.dart';
 import 'login_screen.dart';
 import 'cart_screen.dart';
@@ -176,6 +177,100 @@ class _HomeScreenState extends State<HomeScreen> {
                     ).animate().fade(duration: 500.ms).slideY(begin: 0.2, end: 0),
                     
                     const SizedBox(height: 32),
+
+                    // Vouchers
+                    Consumer<VoucherProvider>(
+                      builder: (context, voucherProv, child) {
+                        if (voucherProv.publicVouchers.isEmpty) return const SizedBox.shrink();
+                        
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Voucher Spesial Untukmu 🎫',
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ).animate().fade(delay: 100.ms),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              height: 110,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: voucherProv.publicVouchers.length,
+                                itemBuilder: (context, index) {
+                                  final voucher = voucherProv.publicVouchers[index];
+                                  return Container(
+                                    width: 280,
+                                    margin: const EdgeInsets.only(right: 16),
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.secondary.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: colorScheme.secondary.withOpacity(0.5)),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.local_offer, size: 40, color: colorScheme.primary),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                voucher.name,
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                voucher.type == 'percent' 
+                                                    ? 'Diskon ${voucher.value.toInt()}%' 
+                                                    : 'Potongan Rp ${voucher.value.toInt()}',
+                                                style: TextStyle(color: colorScheme.primary, fontSize: 12),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () async {
+                                            final auth = Provider.of<AuthProvider>(context, listen: false);
+                                            if (!auth.isAuthenticated) {
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                                              );
+                                              return;
+                                            }
+                                            
+                                            // Claim process
+                                            final result = await voucherProv.claimVoucher(voucher.id);
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text(result['message'])),
+                                              );
+                                            }
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: colorScheme.primary,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                                            minimumSize: Size.zero,
+                                          ),
+                                          child: const Text('Klaim', style: TextStyle(fontSize: 12)),
+                                        )
+                                      ],
+                                    ),
+                                  ).animate().fade(delay: Duration(milliseconds: 200 + (index * 100))).slideX();
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                          ],
+                        );
+                      },
+                    ),
                     
                     // Categories
                     Text(
