@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/auth_provider.dart';
 import '../providers/menu_provider.dart';
+import '../providers/cart_provider.dart';
 import '../models/menu.dart';
 import 'login_screen.dart';
+import 'cart_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -36,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final menuProvider = Provider.of<MenuProvider>(context);
+    final cart = Provider.of<CartProvider>(context);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -43,11 +46,42 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Menu NgopiKuy ☕'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_cart_outlined),
-            onPressed: () {
-              // TODO: Navigate to Cart
-            },
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.shopping_cart_outlined),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const CartScreen()),
+                  );
+                },
+              ),
+              if (cart.totalItems > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '${cart.totalItems}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
+            ],
           ),
           Consumer<AuthProvider>(
             builder: (context, auth, child) {
@@ -218,6 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildMenuCard(BuildContext context, Menu menu, int index) {
     final colorScheme = Theme.of(context).colorScheme;
+    final cart = Provider.of<CartProvider>(context, listen: false);
     
     return Container(
       decoration: BoxDecoration(
@@ -284,9 +319,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 32,
                   child: ElevatedButton(
                     onPressed: () {
-                      // TODO: Add to Cart
+                      cart.addToCart(menu);
+                      ScaffoldMessenger.of(context).clearSnackBars();
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('${menu.name} ditambahkan!')),
+                        SnackBar(
+                          content: Text('${menu.name} ditambahkan!'),
+                          duration: const Duration(seconds: 1),
+                        ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
