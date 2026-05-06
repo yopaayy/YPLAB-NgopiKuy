@@ -49,13 +49,23 @@ class _HomeScreenState extends State<HomeScreen> {
               // TODO: Navigate to Cart
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await Provider.of<AuthProvider>(context, listen: false).logout();
-              if (context.mounted) {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+          Consumer<AuthProvider>(
+            builder: (context, auth, child) {
+              if (auth.isAuthenticated) {
+                return IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: () async {
+                    await auth.logout();
+                  },
+                );
+              } else {
+                return TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                    );
+                  },
+                  child: const Text('Login'),
                 );
               }
             },

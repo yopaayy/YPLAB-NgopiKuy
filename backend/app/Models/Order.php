@@ -6,10 +6,23 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
-    protected $fillable = ['user_id', 'order_number', 'type', 'status', 'total_amount', 'notes'];
+    protected $fillable = [
+        'user_id', 
+        'guest_id',
+        'customer_name',
+        'customer_phone',
+        'idempotency_key',
+        'order_number', 
+        'type', 
+        'status', 
+        'total_amount', 
+        'discount_amount',
+        'notes'
+    ];
 
     protected $casts = [
         'total_amount' => 'float',
+        'discount_amount' => 'float',
     ];
 
     public function user()

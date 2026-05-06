@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Menu;
+use App\Jobs\ProcessOrderNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
@@ -21,7 +24,8 @@ class OrderController extends Controller
 
     public function show(Request $request, Order $order)
     {
-        if ($request->user()->role !== 'admin' && $order->user_id !== $request->user()->id) {
+        // For guest access, ideally verify by guest_id, but here we simplify for member/admin
+        if ($request->user() && $request->user()->role !== 'admin' && $order->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -35,52 +39,101 @@ class OrderController extends Controller
             'items' => 'required|array|min:1',
             'items.*.menu_id' => 'required|exists:menus,id',
             'items.*.quantity' => 'required|integer|min:1',
-            'items.*.price' => 'required|numeric|min:0',
             'payment_method' => 'required|string',
+            'idempotency_key' => 'required|string',
+            'guest_id' => 'nullable|string',
+            'customer_name' => 'nullable|string',
+            'customer_phone' => 'nullable|string',
             'notes' => 'nullable|string',
         ]);
 
-        try {
-            DB::beginTransaction();
+        // 1. Idempotency Check (Prevent Double Submit)
+        $existingOrder = Order::where('idempotency_key', $request->idempotency_key)->first();
+        if ($existingOrder) {
+            return response()->json([
+                'message' => 'Order already processed',
+                'order' => $existingOrder->load('items', 'payment')
+            ], 200); // 200 OK because it's idempotent
+        }
 
-            $total_amount = collect($request->items)->sum(function($item) {
-                return $item['quantity'] * $item['price'];
+        try {
+            // 2. Database Transaction & Locking
+            $order = DB::transaction(function () use ($request) {
+                
+                // Get all menus with locks to prevent price/availability changes during calculation
+                $menuIds = collect($request->items)->pluck('menu_id');
+                $menus = Menu::whereIn('id', $menuIds)->lockForUpdate()->get()->keyBy('id');
+
+                $total_amount = 0;
+                $orderItemsData = [];
+
+                foreach ($request->items as $item) {
+                    $menu = $menus[$item['menu_id']];
+                    if (!$menu->is_available) {
+                        throw new \Exception("Menu {$menu->name} is currently unavailable.");
+                    }
+                    $subtotal = $item['quantity'] * $menu->price;
+                    $total_amount += $subtotal;
+                    
+                    $orderItemsData[] = [
+                        'menu_id' => $menu->id,
+                        'quantity' => $item['quantity'],
+                        'price' => $menu->price,
+                    ];
+                }
+
+                // 3. Member Benefits (Discount)
+                $discount_amount = 0;
+                $user_id = null;
+
+                // Check auth via sanctum (if token provided)
+                $user = auth('sanctum')->user();
+                if ($user) {
+                    $user_id = $user->id;
+                    // Example benefit: 10% discount for members
+                    $discount_amount = $total_amount * 0.10; 
+                }
+
+                $final_amount = $total_amount - $discount_amount;
+
+                // Create Order
+                $order = Order::create([
+                    'user_id' => $user_id,
+                    'guest_id' => $user_id ? null : $request->guest_id,
+                    'customer_name' => $user_id ? $user->name : $request->customer_name,
+                    'customer_phone' => $user_id ? $user->phone_number : $request->customer_phone,
+                    'idempotency_key' => $request->idempotency_key,
+                    'order_number' => 'ORD-' . strtoupper(Str::random(8)),
+                    'type' => $request->type,
+                    'status' => 'pending',
+                    'total_amount' => $final_amount,
+                    'discount_amount' => $discount_amount,
+                    'notes' => $request->notes,
+                ]);
+
+                // Create Order Items
+                foreach ($orderItemsData as $itemData) {
+                    $itemData['order_id'] = $order->id;
+                    OrderItem::create($itemData);
+                }
+
+                // Create Payment Request
+                $order->payment()->create([
+                    'method' => $request->payment_method,
+                    'status' => 'pending',
+                    'amount' => $final_amount,
+                ]);
+
+                return $order;
             });
 
-            // Create Order
-            $order = Order::create([
-                'user_id' => $request->user()->id,
-                'order_number' => 'ORD-' . strtoupper(uniqid()),
-                'type' => $request->type,
-                'status' => 'pending',
-                'total_amount' => $total_amount,
-                'notes' => $request->notes,
-            ]);
-
-            // Create Order Items
-            foreach ($request->items as $item) {
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'menu_id' => $item['menu_id'],
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                ]);
-            }
-
-            // Create Payment Request
-            $order->payment()->create([
-                'method' => $request->payment_method,
-                'status' => 'pending',
-                'amount' => $total_amount,
-            ]);
-
-            DB::commit();
+            // 4. Queue WhatsApp Notification
+            ProcessOrderNotification::dispatch($order);
 
             return response()->json($order->load('items', 'payment'), 201);
             
         } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['message' => 'Failed to create order', 'error' => $e->getMessage()], 500);
+            return response()->json(['message' => 'Failed to create order', 'error' => $e->getMessage()], 400);
         }
     }
 
@@ -95,6 +148,9 @@ class OrderController extends Controller
         ]);
 
         $order->update(['status' => $request->status]);
+        
+        // Queue status update notification
+        ProcessOrderNotification::dispatch($order);
 
         return response()->json($order);
     }

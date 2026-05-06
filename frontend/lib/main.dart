@@ -68,11 +68,10 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
-      final auth = Provider.of<AuthProvider>(context, listen: false);
       
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => auth.isAuthenticated ? const HomeScreen() : const LoginScreen(),
+          builder: (context) => const HomeScreen(),
         ),
       );
     });

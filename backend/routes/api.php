@@ -3,7 +3,6 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
-
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\OrderController;
@@ -17,14 +16,16 @@ Route::get('/categories/{category}', [CategoryController::class, 'show']);
 Route::get('/menus', [MenuController::class, 'index']);
 Route::get('/menus/{menu}', [MenuController::class, 'show']);
 
+// Public Checkout with Rate Limiting (e.g. 5 requests per minute)
+Route::middleware('throttle:5,1')->post('/orders', [OrderController::class, 'store']);
+
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
 
-    // Orders
+    // Orders (Logged in specific)
     Route::get('/orders', [OrderController::class, 'index']);
     Route::get('/orders/{order}', [OrderController::class, 'show']);
-    Route::post('/orders', [OrderController::class, 'store']);
     
     // Admin only routes
     Route::post('/categories', [CategoryController::class, 'store']);
