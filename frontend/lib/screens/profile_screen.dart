@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/voucher_provider.dart' as import_voucher;
-import 'home_screen.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -232,7 +232,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                 ),
                               ),
-                            ),
+                            ).animate().fade(delay: 200.ms).slideY(begin: 0.1),
 
                             // VOUCHERS SECTION
                             const SizedBox(height: 48),
@@ -305,7 +305,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                         ),
                                       ),
-                                    );
+                                    ).animate().fade(delay: Duration(milliseconds: 200 + (index * 100))).slideX();
                                   },
                                 );
                               },

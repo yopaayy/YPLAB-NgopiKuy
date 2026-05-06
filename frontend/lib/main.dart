@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/auth_provider.dart';
 import 'providers/menu_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/voucher_provider.dart';
-import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 
 void main() {
@@ -33,25 +31,37 @@ class NgopiKuyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF8B5A2B), // Soft Coffee Brown
-          primary: const Color(0xFF6F4E37),
-          secondary: const Color(0xFFD2B48C), // Tan
-          surface: const Color(0xFFFDFBF7), // Off-white/Cream background
-        ),
-        textTheme: GoogleFonts.outfitTextTheme(
-          Theme.of(context).textTheme,
+        primaryColor: const Color(0xFF4A3424), // Dark coffee brown
+        scaffoldBackgroundColor: const Color(0xFFF9F6F0), // Light beige
+        colorScheme: ColorScheme.light(
+          primary: const Color(0xFF4A3424),
+          secondary: const Color(0xFF8B6B56),
+          surface: Colors.white,
+          onPrimary: Colors.white,
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent,
+          backgroundColor: Color(0xFF4A3424),
           elevation: 0,
-          centerTitle: true,
-          iconTheme: IconThemeData(color: Color(0xFF3E2723)),
+          iconTheme: IconThemeData(color: Colors.white),
           titleTextStyle: TextStyle(
-            color: Color(0xFF3E2723),
+            color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF4A3424),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        textTheme: const TextTheme(
+          titleLarge: TextStyle(color: Color(0xFF4A3424), fontWeight: FontWeight.bold),
+          bodyLarge: TextStyle(color: Color(0xFF333333)),
+          bodyMedium: TextStyle(color: Color(0xFF666666)),
         ),
       ),
       home: const SplashScreen(),
