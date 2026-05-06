@@ -28,4 +28,9 @@ class Voucher extends Model
     {
         return $this->hasMany(UserVoucher::class);
     }
+
+    public function getUsedCountAttribute()
+    {
+        return $this->userVouchers()->where('status', 'used')->count();
+    }
 }
