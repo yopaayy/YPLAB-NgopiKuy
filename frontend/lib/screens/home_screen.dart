@@ -7,6 +7,7 @@ import '../providers/cart_provider.dart';
 import '../models/menu.dart';
 import 'login_screen.dart';
 import 'cart_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -87,9 +88,20 @@ class _HomeScreenState extends State<HomeScreen> {
             builder: (context, auth, child) {
               if (auth.isAuthenticated) {
                 return IconButton(
-                  icon: const Icon(Icons.logout),
-                  onPressed: () async {
-                    await auth.logout();
+                  icon: CircleAvatar(
+                    radius: 14,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    backgroundImage: auth.user?['avatar'] != null && auth.user!['avatar'].toString().isNotEmpty
+                        ? NetworkImage(auth.user!['avatar'])
+                        : null,
+                    child: auth.user?['avatar'] == null || auth.user!['avatar'].toString().isEmpty
+                        ? const Icon(Icons.person, size: 18, color: Colors.white)
+                        : null,
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                    );
                   },
                 );
               } else {

@@ -22,6 +22,7 @@ Route::middleware('throttle:5,1')->post('/orders', [OrderController::class, 'sto
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
+    Route::put('/user/profile', [AuthController::class, 'updateProfile']);
 
     // Orders (Logged in specific)
     Route::get('/orders', [OrderController::class, 'index']);

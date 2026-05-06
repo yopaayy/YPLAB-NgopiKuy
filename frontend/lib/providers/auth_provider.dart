@@ -57,6 +57,29 @@ class AuthProvider with ChangeNotifier {
     return false;
   }
 
+  Future<bool> updateProfile(Map<String, dynamic> data) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await _apiService.dio.put('/user/profile', data: data);
+      if (response.statusCode == 200) {
+        _user = response.data['user'];
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+
   Future<void> logout() async {
     try {
       await _apiService.dio.post('/logout');
