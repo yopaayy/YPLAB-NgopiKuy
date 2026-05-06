@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
+import 'providers/auth_provider.dart';
+import 'screens/login_screen.dart';
 
 void main() {
-  runApp(const NgopiKuyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()..checkAuthStatus()),
+      ],
+      child: const NgopiKuyApp(),
+    ),
+  );
 }
 
 class NgopiKuyApp extends StatelessWidget {
@@ -20,7 +31,6 @@ class NgopiKuyApp extends StatelessWidget {
           primary: const Color(0xFF6F4E37),
           secondary: const Color(0xFFD2B48C), // Tan
           surface: const Color(0xFFFDFBF7), // Off-white/Cream background
-          background: const Color(0xFFFDFBF7),
         ),
         textTheme: GoogleFonts.outfitTextTheme(
           Theme.of(context).textTheme,
@@ -42,18 +52,31 @@ class NgopiKuyApp extends StatelessWidget {
   }
 }
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Navigate to Home after 2 seconds
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
     Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(
+          builder: (context) => auth.isAuthenticated ? const HomeScreen() : const LoginScreen(),
+        ),
       );
     });
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.primary,
       body: Center(
@@ -101,6 +124,17 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.shopping_cart_outlined),
             onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await Provider.of<AuthProvider>(context, listen: false).logout();
+              if (context.mounted) {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              }
+            },
           )
         ],
       ),
@@ -159,6 +193,11 @@ class HomeScreen extends StatelessWidget {
                 _buildCategoryCard(context, 'Non-Coffee', Icons.local_drink),
                 _buildCategoryCard(context, 'Snacks', Icons.cookie),
               ],
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Rekomendasi (Data statis sementara)',
+              style: Theme.of(context).textTheme.titleMedium,
             ),
           ],
         ),
