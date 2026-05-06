@@ -6,5 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class Payment extends Model
 {
-    //
+    protected $fillable = ['order_id', 'method', 'status', 'amount', 'transaction_id'];
+
+    protected $casts = [
+        'amount' => 'float',
+    ];
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
+    }
 }
