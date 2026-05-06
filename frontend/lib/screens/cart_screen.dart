@@ -187,37 +187,50 @@ class _CartScreenState extends State<CartScreen> {
                       if (auth.isAuthenticated) ...[
                         Consumer<import_voucher.VoucherProvider>(
                           builder: (context, voucherProv, child) {
-                            final claimedVouchers = voucherProv.myVouchers
-                                .where((v) => v['status'] == 'claimed')
+                            final displayVouchers = voucherProv.myVouchers
+                                .where((v) => v['status'] != 'expired')
                                 .toList();
-                                
-                            if (claimedVouchers.isEmpty) return const SizedBox.shrink();
 
-                            return DropdownButtonFormField<Map<String, dynamic>>(
-                              value: cart.selectedVoucher,
+                            return DropdownButtonFormField<int?>(
+                              value: cart.selectedVoucher?['voucher_id'],
                               decoration: const InputDecoration(
                                 labelText: 'Gunakan Voucher (Opsional)', 
                                 border: OutlineInputBorder(),
                                 prefixIcon: Icon(Icons.local_offer, color: Colors.orange),
                               ),
                               items: [
-                                const DropdownMenuItem<Map<String, dynamic>>(
+                                const DropdownMenuItem<int?>(
                                   value: null,
                                   child: Text('Tidak pakai voucher'),
                                 ),
-                                ...claimedVouchers.map((v) {
+                                ...displayVouchers.map((v) {
                                   final voucher = v['voucher'];
                                   final name = voucher['name'];
                                   final minPurchase = voucher['min_purchase'];
-                                  return DropdownMenuItem<Map<String, dynamic>>(
-                                    value: v,
-                                    child: Text('$name (Min. Rp ${double.parse(minPurchase.toString()).toInt()})'),
+                                  final isUsed = v['status'] == 'used';
+                                  
+                                  return DropdownMenuItem<int?>(
+                                    value: v['voucher_id'],
+                                    enabled: !isUsed,
+                                    child: Text(
+                                      isUsed 
+                                        ? '$name (Sudah digunakan)' 
+                                        : '$name (Min. Rp ${double.parse(minPurchase.toString()).toInt()})',
+                                      style: TextStyle(
+                                        color: isUsed ? Colors.grey : Colors.black,
+                                      ),
+                                    ),
                                   );
                                 }),
                               ],
                               isExpanded: true,
                               onChanged: (val) {
-                                cart.applyVoucher(val);
+                                if (val == null) {
+                                  cart.applyVoucher(null);
+                                } else {
+                                  final selected = displayVouchers.firstWhere((v) => v['voucher_id'] == val);
+                                  cart.applyVoucher(selected);
+                                }
                               },
                             );
                           },
