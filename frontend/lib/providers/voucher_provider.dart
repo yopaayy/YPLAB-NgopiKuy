@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import '../models/voucher.dart';
 import '../services/api_service.dart';
 
@@ -48,9 +49,11 @@ class VoucherProvider with ChangeNotifier {
         await fetchMyVouchers(); // Refresh my vouchers
         return {'success': true, 'message': 'Voucher berhasil diklaim!'};
       }
-    } catch (e: dynamic) {
-      if (e.response != null && e.response?.data != null) {
-        return {'success': false, 'message': e.response?.data['message'] ?? 'Gagal klaim voucher'};
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null && e.response?.data != null) {
+          return {'success': false, 'message': e.response?.data['message'] ?? 'Gagal klaim voucher'};
+        }
       }
     }
     return {'success': false, 'message': 'Terjadi kesalahan sistem'};
