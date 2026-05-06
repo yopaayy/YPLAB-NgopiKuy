@@ -88,7 +88,8 @@ class _HomeScreenState extends State<HomeScreen> {
           Consumer<AuthProvider>(
             builder: (context, auth, child) {
               if (auth.isAuthenticated) {
-                return IconButton(
+                return PopupMenuButton<String>(
+                  offset: const Offset(0, 40),
                   icon: CircleAvatar(
                     radius: 14,
                     backgroundColor: Theme.of(context).colorScheme.primary,
@@ -99,11 +100,37 @@ class _HomeScreenState extends State<HomeScreen> {
                         ? const Icon(Icons.person, size: 18, color: Colors.white)
                         : null,
                   ),
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => const ProfileScreen()),
-                    );
+                  onSelected: (value) async {
+                    if (value == 'profile') {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                      );
+                    } else if (value == 'logout') {
+                      await auth.logout();
+                    }
                   },
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'profile',
+                      child: Row(
+                        children: [
+                          Icon(Icons.person, size: 20),
+                          SizedBox(width: 12),
+                          Text('My Profile'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'logout',
+                      child: Row(
+                        children: [
+                          Icon(Icons.logout, size: 20, color: Colors.red),
+                          SizedBox(width: 12),
+                          Text('Logout', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
                 );
               } else {
                 return TextButton(
