@@ -18,7 +18,11 @@ class MenuResource extends Resource
 {
     protected static ?string $model = Menu::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCake;
+
+    protected static ?string $navigationGroup = 'Menu Management';
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -46,5 +50,10 @@ class MenuResource extends Resource
             'create' => CreateMenu::route('/create'),
             'edit' => EditMenu::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
     }
 }

@@ -28,9 +28,19 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->brandName('☕ NgopiKuy Admin')
             ->colors([
                 'primary' => Color::Amber,
+                'danger' => Color::Rose,
+                'info' => Color::Sky,
+                'success' => Color::Emerald,
+                'warning' => Color::Orange,
             ])
+            ->darkMode(true)
+            ->sidebarCollapsibleOnDesktop()
+            ->sidebarWidth('18rem')
+            ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
+            ->databaseNotifications()
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
@@ -39,7 +49,6 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

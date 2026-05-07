@@ -18,7 +18,11 @@ class VoucherResource extends Resource
 {
     protected static ?string $model = Voucher::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedGift;
+
+    protected static ?string $navigationGroup = 'Orders & Payments';
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -46,5 +50,10 @@ class VoucherResource extends Resource
             'create' => CreateVoucher::route('/create'),
             'edit' => EditVoucher::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
     }
 }

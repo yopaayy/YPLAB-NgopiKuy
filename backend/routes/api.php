@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\OrderController;
 
 use App\Http\Controllers\Api\VoucherController;
+use App\Http\Controllers\Api\MidtransController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -21,6 +22,9 @@ Route::get('/vouchers', [VoucherController::class, 'index']);
 
 // Public Checkout with Rate Limiting (e.g. 5 requests per minute)
 Route::middleware('throttle:5,1')->post('/orders', [OrderController::class, 'store']);
+
+// Midtrans Webhook Callback
+Route::post('/midtrans/callback', [MidtransController::class, 'callback']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);

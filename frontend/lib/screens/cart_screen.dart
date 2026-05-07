@@ -4,6 +4,7 @@ import '../providers/cart_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/voucher_provider.dart' as import_voucher;
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'success_screen.dart';
 
 class CartScreen extends StatefulWidget {
@@ -44,10 +45,23 @@ class _CartScreenState extends State<CartScreen> {
     );
 
     if (result['success']) {
+      final orderData = result['data'];
+      final payment = orderData['payment'];
+      
+      if (payment != null && payment['snap_token'] != null) {
+        final snapToken = payment['snap_token'];
+        final snapUrl = Uri.parse('https://app.sandbox.midtrans.com/snap/v2/vtweb/$snapToken');
+        try {
+          await launchUrl(snapUrl, mode: LaunchMode.inAppWebView);
+        } catch (e) {
+          debugPrint('Could not launch Midtrans URL: $e');
+        }
+      }
+
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => SuccessScreen(orderData: result['data']),
+          builder: (context) => SuccessScreen(orderData: orderData),
         ),
       );
     } else {

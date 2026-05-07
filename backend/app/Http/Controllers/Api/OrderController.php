@@ -10,6 +10,7 @@ use App\Jobs\ProcessOrderNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Services\MidtransService;
 
 class OrderController extends Controller
 {
@@ -153,11 +154,23 @@ class OrderController extends Controller
                 }
 
                 // Create Payment Request
-                $order->payment()->create([
+                $payment = $order->payment()->create([
                     'method' => $request->payment_method,
                     'status' => 'pending',
                     'amount' => $final_amount,
                 ]);
+
+                // Generate Snap Token if payment method is not cash
+                if ($request->payment_method !== 'cash') {
+                    $midtransService = new MidtransService();
+                    $customerName = $user_id ? $user->name : $request->customer_name;
+                    $customerPhone = $user_id ? $user->phone_number : $request->customer_phone;
+                    
+                    $snapToken = $midtransService->createSnapToken($order, $customerName, $customerPhone);
+                    if ($snapToken) {
+                        $payment->update(['snap_token' => $snapToken]);
+                    }
+                }
 
                 return $order;
             });

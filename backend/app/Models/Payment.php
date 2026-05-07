@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Payment extends Model
 {
-    protected $fillable = ['order_id', 'method', 'status', 'amount', 'transaction_id'];
+    protected $fillable = ['order_id', 'method', 'status', 'amount', 'transaction_id', 'snap_token'];
 
     protected $casts = [
         'amount' => 'float',
